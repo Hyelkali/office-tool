@@ -9,19 +9,37 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const location = useLocation()
   const { userProfile } = useAuth()
 
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Equipment", href: "/equipment", icon: Package },
-    { name: "Requests", href: "/requests", icon: FileText },
-    { name: "Activity Logs", href: "/logs", icon: Activity },
-  ]
+  const getNavigation = (role) => {
+    const baseNav = [
+      { name: "Equipment", href: "/equipment", icon: Package },
+      { name: "Requests", href: "/requests", icon: FileText },
+    ]
 
-  if (userProfile?.role === "admin") {
-    navigation.push(
-      { name: "Users", href: "/users", icon: Users },
-      { name: "Settings", href: "/settings", icon: Settings },
-    )
+    switch (role) {
+      case "admin":
+        return [
+          { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+          ...baseNav,
+          { name: "Users", href: "/users", icon: Users },
+          { name: "Activity Logs", href: "/logs", icon: Activity },
+          { name: "Settings", href: "/settings", icon: Settings },
+        ]
+      case "staff":
+        return [
+          { name: "Dashboard", href: "/staff/dashboard", icon: LayoutDashboard },
+          ...baseNav,
+        ]
+      case "technician":
+        return [
+          { name: "Dashboard", href: "/technician/dashboard", icon: LayoutDashboard },
+          ...baseNav,
+        ]
+      default:
+        return []
+    }
   }
+
+  const navigation = getNavigation(userProfile?.role)
 
   return (
     <>

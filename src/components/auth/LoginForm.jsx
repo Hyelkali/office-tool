@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { motion, AnimatePresence } from "framer-motion"
 import { Eye, EyeOff, Mail, Lock, User, Building, Phone, Briefcase } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 export default function LoginForm() {
   const [isLogin, setIsLogin] = useState(true)
@@ -20,7 +21,8 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
-  const { login, signup, signInWithGoogle } = useAuth()
+  const { login, signup, signInWithGoogle, userProfile } = useAuth()
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -29,6 +31,21 @@ export default function LoginForm() {
     try {
       if (isLogin) {
         await login(formData.email, formData.password)
+        if (userProfile) {
+          switch (userProfile.role) {
+            case "admin":
+              navigate("/admin/dashboard")
+              break
+            case "staff":
+              navigate("/staff/dashboard")
+              break
+            case "technician":
+              navigate("/technician/dashboard")
+              break
+            default:
+              navigate("/dashboard")
+          }
+        }
       } else {
         await signup(formData.email, formData.password, {
           name: formData.name,
@@ -37,6 +54,7 @@ export default function LoginForm() {
           position: formData.position,
           role: formData.role,
         })
+        navigate("/login")
       }
     } catch (error) {
       console.error("Auth error:", error)
@@ -166,105 +184,6 @@ export default function LoginForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <AnimatePresence mode="wait">
-          {!isLogin && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-4"
-            >
-              {/* Name Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    disabled={loading || googleLoading}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 bg-white/50"
-                    placeholder="Enter your full name"
-                    required={!isLogin}
-                  />
-                </div>
-              </div>
-
-              {/* Department and Position Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Department *</label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleChange}
-                      disabled={loading || googleLoading}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 bg-white/50"
-                      placeholder="e.g., IT, HR, Finance"
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      name="position"
-                      value={formData.position}
-                      onChange={handleChange}
-                      disabled={loading || googleLoading}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 bg-white/50"
-                      placeholder="e.g., Manager, Developer"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Phone Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    disabled={loading || googleLoading}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 bg-white/50"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-              </div>
-
-              {/* Role Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  disabled={loading || googleLoading}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 bg-white/50"
-                >
-                  <option value="staff">Staff Member</option>
-                  <option value="technician">Technician</option>
-                  <option value="admin">Administrator</option>
-                </select>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Email Field */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
@@ -320,12 +239,10 @@ export default function LoginForm() {
           {loading ? (
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              {isLogin ? "Signing in..." : "Creating account..."}
+              Signing in...
             </div>
-          ) : isLogin ? (
-            "Sign In"
           ) : (
-            "Create Account"
+            "Sign In"
           )}
         </motion.button>
       </form>
@@ -334,11 +251,11 @@ export default function LoginForm() {
       <div className="text-center">
         <button
           type="button"
-          onClick={() => setIsLogin(!isLogin)}
+          onClick={() => navigate("/register")}
           disabled={loading || googleLoading}
           className="text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50"
         >
-          {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+          Don't have an account? Sign up
         </button>
       </div>
     </div>

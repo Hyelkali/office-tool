@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Activity, Search, Filter, Calendar, Package, FileText, User, Clock } from "lucide-react"
+import { Activity, Search, Filter, Calendar, Package, FileText, User, Clock, Download } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { formatDateTime } from "@/lib/utils"
+import Papa from "papaparse"
+import jsPDF from "jspdf"
+import "jspdf-autotable"
 
 export default function ActivityLogs() {
   const [logs, setLogs] = useState([])
@@ -111,6 +114,31 @@ export default function ActivityLogs() {
     dateFilter,
   )
 
+  const downloadCSV = () => {
+    const csv = Papa.unparse(filteredLogs)
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.setAttribute("download", "activity_logs.csv")
+    link.click()
+  }
+
+  const downloadPDF = () => {
+    const doc = new jsPDF()
+    doc.autoTable({
+      head: [["ID", "Message", "Details", "Type", "User ID", "Created At"]],
+      body: filteredLogs.map((log) => [
+        log.id,
+        log.message,
+        log.details,
+        log.type,
+        log.user_id,
+        formatDateTime(log.created_at),
+      ]),
+    })
+    doc.save("activity_logs.pdf")
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -131,9 +159,25 @@ export default function ActivityLogs() {
           <h1 className="text-3xl font-bold text-gray-900">Activity Logs</h1>
           <p className="text-gray-600 mt-1">Track all system activities and changes</p>
         </div>
-        <div className="mt-4 sm:mt-0 flex items-center space-x-2 text-sm text-gray-500">
-          <Clock className="w-4 h-4" />
-          <span>Last updated: {new Date().toLocaleTimeString()}</span>
+        <div className="mt-4 sm:mt-0 flex items-center space-x-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={downloadCSV}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
+          >
+            <Download className="w-4 h-4" />
+            <span>CSV</span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={downloadPDF}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
+          >
+            <Download className="w-4 h-4" />
+            <span>PDF</span>
+          </motion.button>
         </div>
       </motion.div>
 

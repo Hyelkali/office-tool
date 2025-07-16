@@ -57,6 +57,25 @@ export default function Equipment() {
     }
   }
 
+  const handleUpdateEquipment = async (equipmentData) => {
+    try {
+      const { data, error } = await supabase.from("equipment").update(equipmentData).eq("id", equipmentData.id).select()
+
+      if (error) throw error
+
+      setEquipment((prev) => prev.map((item) => (item.id === data[0].id ? data[0] : item)))
+      toast.success("Equipment updated successfully!")
+    } catch (error) {
+      console.error("Error updating equipment:", error)
+      toast.error("Failed to update equipment")
+      throw error
+    }
+  }
+
+  const handleDeleteEquipment = (equipmentId) => {
+    setEquipment((prev) => prev.filter((item) => item.id !== equipmentId))
+  }
+
   const filteredEquipment = equipment.filter((item) => {
     const matchesSearch =
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -223,6 +242,8 @@ export default function Equipment() {
             equipment={selectedEquipment}
             onClose={() => setSelectedEquipment(null)}
             userRole={userProfile?.role}
+            onUpdate={handleUpdateEquipment}
+            onDelete={handleDeleteEquipment}
           />
         )}
 
