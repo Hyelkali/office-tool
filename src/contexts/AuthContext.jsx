@@ -24,48 +24,30 @@ export function AuthProvider({ children }) {
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const determineUserRole = useCallback((email) => {
-    if (email === "hyelnamuninathan@gmail.com") {
-      return "admin"
+  const createUserProfile = useCallback(async (user, additionalData = {}) => {
+    const userProfile = {
+      id: user.uid,
+      email: user.email,
+      name: additionalData.name || user.displayName || "User",
+      role: additionalData.role || "staff",
+      department: additionalData.department || "General",
+      phone: additionalData.phone || null,
+      position: additionalData.position || null,
+      photo_url: user.photoURL || null,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }
-    const adminEmails = ["admin@company.com", "hyelnamuninathan@gmail.com"]
-    if (adminEmails.includes(email)) {
-      return "admin"
+
+    const { error } = await supabase.from("users").upsert(userProfile, { onConflict: "id" })
+
+    if (error) {
+      console.error("Error creating user profile:", error)
+      throw error
     }
-    return "staff"
+
+    return userProfile
   }, [])
-
-  const createUserProfile = useCallback(
-    async (user, additionalData = {}) => {
-      const userRole = determineUserRole(user.email)
-      const isDefaultAdmin = user.email === "hyelnamuninathan@gmail.com"
-
-      const userProfile = {
-        id: user.uid,
-        email: user.email,
-        name: additionalData.name || user.displayName || "User",
-        role: additionalData.role || userRole,
-        department: additionalData.department || (isDefaultAdmin ? "IT Administration" : "General"),
-        phone: additionalData.phone || null,
-        position: additionalData.position || null,
-        photo_url: user.photoURL || null,
-        is_active: true,
-        is_default_admin: isDefaultAdmin,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-
-      const { error } = await supabase.from("users").upsert(userProfile, { onConflict: "id" })
-
-      if (error) {
-        console.error("Error creating user profile:", error)
-        throw error
-      }
-
-      return userProfile
-    },
-    [determineUserRole],
-  )
 
   const fetchUserProfile = useCallback(
     async (user) => {

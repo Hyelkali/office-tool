@@ -1,9 +1,30 @@
 "use client"
 
+import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Package, MapPin, Calendar, User, Settings, Edit, Trash2 } from "lucide-react"
+import EditEquipmentModal from "./EditEquipmentModal"
+import { supabase } from "@/lib/supabase"
+import toast from "react-hot-toast"
 
-export default function EquipmentModal({ equipment, onClose, userRole }) {
+export default function EquipmentModal({ equipment, onClose, userRole, onUpdate, onDelete }) {
+  const [showEditModal, setShowEditModal] = useState(false)
+
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure you want to delete this equipment?")) {
+      try {
+        const { error } = await supabase.from("equipment").delete().eq("id", equipment.id)
+        if (error) throw error
+        toast.success("Equipment deleted successfully!")
+        onDelete(equipment.id)
+        onClose()
+      } catch (error) {
+        console.error("Error deleting equipment:", error)
+        toast.error("Failed to delete equipment")
+      }
+    }
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case "available":
@@ -92,6 +113,7 @@ export default function EquipmentModal({ equipment, onClose, userRole }) {
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
+                        onClick={() => setShowEditModal(true)}
                         className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center space-x-2"
                       >
                         <Edit className="w-4 h-4" />
@@ -100,6 +122,7 @@ export default function EquipmentModal({ equipment, onClose, userRole }) {
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
+                        onClick={handleDelete}
                         className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors flex items-center space-x-2"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -254,6 +277,16 @@ export default function EquipmentModal({ equipment, onClose, userRole }) {
           </div>
         </motion.div>
       </motion.div>
+      {showEditModal && (
+        <EditEquipmentModal
+          equipment={equipment}
+          onClose={() => setShowEditModal(false)}
+          onSubmit={(updatedEquipment) => {
+            onUpdate(updatedEquipment)
+            setShowEditModal(false)
+          }}
+        />
+      )}
     </AnimatePresence>
   )
 }
